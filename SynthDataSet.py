@@ -1,3 +1,6 @@
+# Module for generating synthetic dataset for Linear Regression problem
+# Details on its generation is given in Section "Numerical Validation" in the main paper and also Section 2 of Supplementary file
+
 import numpy as np
 import torch
 import random
