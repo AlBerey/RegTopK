@@ -1,3 +1,6 @@
+# ResNet-18 over CIFAR-10 Implementation
+# Consistent with what presented in Section 2 of the supplementary file
+
 import torch, torchvision
 from torchvision import datasets
 from torchvision import transforms as trns
@@ -31,8 +34,6 @@ sprs_factor = 0.0001
 # Loading data
 transform = trns.Compose([
     trns.Resize((224, 224)),
-    # trns.RandomHorizontalFlip(),
-    # trns.RandomRotation(degrees=10),
     trns.ToTensor(),
     trns.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
@@ -45,8 +46,8 @@ trainLoader, trainLoader_itr = dl.FLtrainLoader(dataset_train, batch_size=batch_
 testLoader = DataLoader(dataset_test, batch_size=batch_size, shuffle=True)
 
 # Define Model
-model_gl_topK = dl.ResNet13_cifar(device)
-model_gl = dl.ResNet13_cifar(device)
+model_gl_topK = dl.ResNet18_cifar(device)
+model_gl = dl.ResNet18_cifar(device)
 dist_0 = float('inf')
 
 # keep the shape of layer tensors in ResNet18
@@ -110,10 +111,10 @@ for round in range(num_rounds):
 
     for k in range(Num_clients):
         # Start with making a local model 
-        model_loc = dl.ResNet13_cifar(device)
+        model_loc = dl.ResNet18_cifar(device)
         dl.FullModelCopy(model_loc, model_gl)
 
-        model_loc_topK = dl.ResNet13_cifar(device)
+        model_loc_topK = dl.ResNet18_cifar(device)
         dl.FullModelCopy(model_loc_topK, model_gl_topK)
 
         Optimizer_loc = torch.optim.SGD(model_loc.parameters(), lr = lr_loc[k])
@@ -150,7 +151,6 @@ for round in range(num_rounds):
             loss_topK = Fn.cross_entropy(dist_pred_topK,y_train)
 
             # SGD step
-            
             loss.backward()
             Optimizer_loc.step()
 
@@ -171,9 +171,6 @@ for round in range(num_rounds):
     # Aggregate RegTopK local gradients
     a_gl = sum(a_loc)/Num_clients
     a_gl_loop = copy.deepcopy(a_gl)
-
-    # model_0 = copy.deepcopy(model_gl)
-    # x_0 = dl.Model_extractor(model_0, device)
 
     Optimizer.zero_grad()
 
@@ -208,7 +205,7 @@ for round in range(num_rounds):
 
     Optimizer_topK.step()
 
-    # flg = 0
+    # validate the model every <test_dur> iterations
     if (round+1) % test_dur == 0:
         for x_test, y_test in testLoader:
             # flg += 1
@@ -230,9 +227,6 @@ for round in range(num_rounds):
                 Accuracy[ind_test] += torch.sum(y_lr == y_test) / batch_size
 
                 Accuracy_topK[ind_test] += torch.sum(y_lr_topK == y_test) / batch_size
-            # if flg == 3:
-            #     break
-
         
         Accuracy[ind_test] /= (len(testLoader)/100)
         Accuracy_topK[ind_test] /= (len(testLoader)/100)
@@ -244,6 +238,7 @@ end = time.time()
 
 print(f'Total Time for {num_rounds} rounds with Batches of Length {batch_size} and local updates of {num_local_itr} Batches = {end-start}')
 
+# Plot accuracy
 plt.plot([i+1 for i in range(num_tests)], Accuracy, label="RegTopK")
 plt.plot([i+1 for i in range(num_tests)], Accuracy_topK, label="TopK")
 plt.legend()
@@ -251,11 +246,11 @@ plt.show()
 
 # Save Data
 Data = [f"{i} {Accuracy_topK[i]}" for i in range(num_tests)]
-Data.append("topK Ends")
+Data.append("TopK Ends")
 for i in range(num_tests):
     Data.append(f"{i} {Accuracy[i]}")
-
 Data.append("RegTopK Ends")
 
+# Save as a LaTex table
 df = pd.DataFrame(Data)
 df.style.hide(axis="index").to_latex('./Data_RegTopK.tex',hrules=True)

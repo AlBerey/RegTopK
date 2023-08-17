@@ -1,3 +1,6 @@
+# Module of Distributed Learning Functions
+# Used for ResNet-18 Implementation
+
 import torch, torchvision
 from torchvision import datasets
 from torchvision import transforms as trns
@@ -60,7 +63,7 @@ def FLtrainLoader(train_dataset, batch_size, client_sampler, K, num_workers = 0)
 
 
 
-def ResNet13_cifar(device):
+def ResNet18_cifar(device):
     model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.DEFAULT)
     model.fc = nn.Linear(in_features=512, out_features=10)
     model = model.to(device)
@@ -186,23 +189,4 @@ def Model_extractor(model, device):
         x_n = param.data.detach().flatten()
         mod_param = torch.cat([mod_param, x_n])
     
-    return mod_param
-
-def termination(model, x_0, model_0, dist_0, device):
-
-    x = torch.tensor([]).to(device)
-    for param in model.parameters():
-        x_n = param.data.detach().flatten()
-        x = torch.cat([x, x_n])
-    
-    dist = torch.norm(x_0.flatten() - x.flatten(), p=2)**2
-    
-    if dist >= dist_0:
-        model_out = copy.deepcopy(model_0)
-        dist_out = copy.deepcopy(dist_0)
-    else:
-        dist_out = 100*copy.deepcopy(dist.detach().item())
-        model_out = copy.deepcopy(model)
-    return model_out, dist_out
-
     return mod_param
