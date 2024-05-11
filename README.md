@@ -1,5 +1,5 @@
-# RegTopK_AAAI24
-SourceCodes of Submission to AAAI24
+# RegTopK
+SourceCodes of the paper "Regularized Top-k: A Bayesian Framework for Gradient Sparsification"
 
 ## Modules
 There are three modules, namely DistLearn.py and DistLearnLinearReg.py and SymthDataSet. The first two modules contain distributed
